@@ -4,7 +4,7 @@
     3. we compare these two embeddings
         3.1 -> sample code uses cosine, we can change it to eucledian distance
 
-in the [sample code][sample-code.py] database is created during runtime, we dont want that, we create it once
+in the **[sample code](sample-code.py)** database is created during runtime, we dont want that, we create it once
 and when a new face is added, we update the db.
 
 for the db we can use a simple json structure
