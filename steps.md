@@ -2,3 +2,4 @@
     1. need to create a db with embeddings of the persons' face that we want to verify
     2. then with the given image, we first get the embeddings of this new image
     3. we compare these two embeddings
+        3.1 -> sample code uses cosine, we can change it to eucledian distance
