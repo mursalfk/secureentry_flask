@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+<section class="about-section">
+  <h2>🔐 About <span class="highlight">SecureEntry</span></h2>
+
+  <p class="intro">
+    <strong>SecureEntry</strong> is a modern home security solution that uses <em>facial and voice recognition</em> for <strong>dual authentication</strong>, ensuring only verified users can access your space.
+  </p>
+
+  <div class="about-grid">
+    <div class="team-box">
+      <h3>👨‍💻 Team Members</h3>
+      <ul>
+        <li>
+          <strong>Mursal Furqan Kumbhar</strong> (Mat.: 2047419) <br>
+          🌐 <a href="https://mursal.me" target="_blank">mursal.me</a>
+        </li>
+        <li>
+          <strong>Srinjan Ghosh</strong> (Mat.: 2053796) <br>
+          🔗 <a href="https://www.linkedin.com/in/srinjan-ghosh-09973a195/" target="_blank">LinkedIn</a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="supervisor-box">
+      <h3>👨‍🏫 Supervisor</h3>
+      <p>Prof. Dr. XYZ</p>
+    </div>
+  </div>
+
+  <p>
+    <a href="{{ url_for('dashboard') }}" class="link-button">🔙 Back to Dashboard</a>
+  </p>
+</section>
+{% endblock %}

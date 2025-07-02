@@ -1,0 +1,17 @@
+{% extends "base.html" %} {% block title %}Open Door{% endblock %} {% block
+content %}
+<h2>🚪 Authenticate to Open Door</h2>
+
+<div class="open-door-wrapper">
+  <div class="door-options">
+    <a class="card" href="{{ url_for('face_recognition') }}"
+      >🧑‍🦱 Facial Recognition</a
+    >
+    <a class="card" href="{{ url_for('voice_recognition') }}"
+      >🎤 Voice Recognition</a
+    >
+  </div>
+</div>
+
+<p><a href="{{ url_for('dashboard') }}" class="link-button">🔙 Back to Dashboard</a></p>
+{% endblock %}

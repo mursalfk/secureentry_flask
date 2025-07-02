@@ -1,0 +1,17 @@
+@use "sass:color";
+@use "variables" as *;
+
+.form-footer {
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+
+  a {
+    color: $primary;
+    text-decoration: underline;
+    font-weight: 500;
+
+    &:hover {
+      color: color.adjust($primary, $lightness: 20%);
+    }
+  }
+}

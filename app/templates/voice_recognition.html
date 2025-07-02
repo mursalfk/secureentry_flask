@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Voice Recognition{% endblock %}
+
+{% block content %}
+<title>Voice Recognition</title>
+<h2>🎤 Voice Recognition</h2>
+
+<form method="post">
+  <button type="submit">Start Voice Recognition</button>
+</form>
+
+{% if result %}
+  <p><strong>Result:</strong> {{ result }}</p>
+{% endif %}
+
+<p><a href="{{ url_for('open_door') }}" class="link-button">🔙 Back</a></p>
+{% endblock %}

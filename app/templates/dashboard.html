@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="full-screen-dashboard">
+  <main class="dashboard-center">
+    <h2>Dashboard</h2>
+
+    <div class="dashboard-grid">
+      <a class="dashboard-card" href="{{ url_for('open_door') }}">🔓 Open Door</a>
+      <a class="dashboard-card" href="{{ url_for('profile') }}">👤 Profile</a>
+      <a class="dashboard-card" href="{{ url_for('settings') }}">⚙️ Settings</a>
+      {% if current_user.is_authenticated and current_user.is_admin %}
+      <a class="dashboard-card admin-card" href="{{ url_for('admin_dashboard') }}">
+        👑 Admin Dashboard
+      </a>
+      <a class="dashboard-card" href="{{ url_for('about') }}">ℹ️ About Us</a>
+
+      {% endif %}
+    </div>
+  </main>
+
+  <footer class="dashboard-footer">© 2025 SecureEntry</footer>
+</div>
+{% endblock %}

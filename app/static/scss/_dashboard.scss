@@ -1,0 +1,64 @@
+@use "variables" as *;
+@use "sass:color";
+
+.dashboard-wrapper {
+  background-color: $primary;
+  min-height: calc(100vh - 60px); // minus navbar height
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.dashboard-container {
+  background-color: white;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+.dashboard-container h2 {
+  color: $primary;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  font-weight: 700;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.dashboard-card {
+  background: linear-gradient(to bottom right, #ffffffcc, #f8f9ffcc);
+  backdrop-filter: blur(6px);
+  border: 2px solid color.scale($primary, $lightness: 30%);
+  border-radius: 16px;
+  padding: 2rem 1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: $primary;
+  text-decoration: none;
+  text-align: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &:hover {
+    background-color: $primary;
+    color: white;
+    transform: scale(1.04);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+}

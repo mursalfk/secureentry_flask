@@ -1,0 +1,57 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+  <div class="dashboard-header">
+    <h1>🚪 SecureEntry Admin Portal</h1>
+    <p class="welcome-msg">
+      Welcome back, <strong>{{ current_user.username }}</strong> 👑
+    </p>
+
+    <!-- 🔙 Back to User Dashboard Button -->
+    <a href="{{ url_for('dashboard') }}" class="link-button">← Back to User Dashboard</a>
+  </div>
+
+  <div class="admin-panels">
+    <!-- Manage Users -->
+    <div class="admin-card">
+      <div class="card-icon">👥</div>
+      <div class="card-body">
+        <h3>Manage Users</h3>
+        <p>View all users, promote to admin, delete, and export as CSV.</p>
+        <a href="{{ url_for('admin_users') }}" class="admin-button primary link-button">Go to Users</a>
+      </div>
+    </div>
+
+    <!-- User Logs -->
+    <div class="admin-card">
+      <div class="card-icon">📜</div>
+      <div class="card-body">
+        <h3>User Logs</h3>
+        <p>Track login history and system actions.</p>
+        <a href="#" class="admin-button disabled">Coming Soon</a>
+      </div>
+    </div>
+
+    <!-- Model Status -->
+    <div class="admin-card">
+      <div class="card-icon">🧠</div>
+      <div class="card-body">
+        <h3>Model Status</h3>
+        <p>Retrain or monitor current models.</p>
+        <p><strong>Status:</strong> {{ retrain_status }}</p>
+        <div class="model-buttons">
+          <form method="POST" action="{{ url_for('retrain_face') }}">
+            <button type="submit" class="admin-button success">Retrain Face</button>
+          </form>
+          <form method="POST" action="{{ url_for('retrain_voice') }}">
+            <button type="submit" class="admin-button warning">Retrain Voice</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

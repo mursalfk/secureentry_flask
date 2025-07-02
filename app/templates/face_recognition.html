@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Facial Recognition{% endblock %}
+
+{% block content %}
+<title>Facial Recognition</title>
+<h2>🧑‍🦱 Facial Recognition</h2>
+
+<form method="post">
+  <button type="submit">Start Face Recognition</button>
+</form>
+
+{% if result %}
+  <p><strong>Result:</strong> {{ result }}</p>
+{% endif %}
+
+<p><a href="{{ url_for('open_door') }}" class="link-button">🔙 Back</a></p>
+{% endblock %}

@@ -1,0 +1,238 @@
+@use "sass:color";
+
+// 🎨 Color Variables
+$primary: #007bff;
+$primary-hover: #0056b3;
+$background: #f0f4f8;
+$white: #ffffff;
+$text-dark: #2c3e50;
+$text-gray: #555;
+$text-light: #777;
+$shadow: rgba(0, 0, 0, 0.08);
+$shadow-hover: rgba(0, 0, 0, 0.15);
+$success: #28a745;
+$warning: #ffc107;
+$danger: #dc3545;
+
+// 🌐 Global Styles
+body {
+  background-color: $background;
+  font-family: "Segoe UI", sans-serif;
+  color: $text-dark;
+  margin: 0;
+  padding: 0;
+  width: 90vw;
+}
+
+.admin-wrapper {
+  max-width: 1080px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: $white;
+  border-radius: 14px;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.05);
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  text-decoration: none;
+  color: $primary;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// 🔒 Admin Dashboard
+.admin-dashboard {
+  padding: 2.5rem 1.5rem;
+
+  h1,
+  h2 {
+    font-size: 2.2rem;
+    color: $text-dark;
+    margin-bottom: 1rem;
+  }
+
+  .welcome-msg {
+    font-size: 1.1rem;
+    color: $text-gray;
+
+    strong {
+      color: $primary;
+    }
+  }
+
+  .admin-panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+
+    .admin-card {
+      background: $white;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px $shadow;
+      padding: 1.5rem;
+      transition: 0.3s ease all;
+
+      &:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 6px 18px $shadow-hover;
+      }
+
+      h3 {
+        margin-top: 0;
+        font-size: 1.3rem;
+        color: $text-dark;
+      }
+
+      p {
+        margin: 0.75rem 0 1.25rem;
+        color: $text-light;
+        line-height: 1.4;
+      }
+
+      form {
+        margin: 0.4rem 0;
+      }
+    }
+  }
+}
+
+// 🎛️ User Controls
+.user-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+
+  .search-input {
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    flex: 1;
+    min-width: 200px;
+  }
+}
+
+// 📋 Users Table
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: $white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  font-size: 0.95rem;
+
+  th,
+  td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  th {
+    background: #f4f6f8;
+    font-weight: 600;
+    color: $text-dark;
+  }
+
+  tr:hover {
+    background: #f9f9f9;
+  }
+
+  td.actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+}
+
+// 🔘 Admin Buttons
+.admin-button {
+  display: inline-block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 0.25s ease;
+  border: none;
+  cursor: pointer;
+
+  &.primary {
+    background-color: $primary;
+    color: $white;
+
+    &:hover {
+      background-color: $primary-hover;
+    }
+  }
+
+  &.success {
+    background-color: $success;
+    color: $white;
+
+    &:hover {
+      background-color: color.adjust($success, $lightness: -10%);
+    }
+  }
+
+  &.warning {
+    background-color: $warning;
+    color: #000;
+
+    &:hover {
+      background-color: color.adjust($warning, $lightness: -10%);
+    }
+  }
+
+  &.danger {
+    background-color: $danger;
+    color: $white;
+
+    &:hover {
+      background-color: color.adjust($danger, $lightness: -10%);
+    }
+  }
+
+  &.disabled {
+    background-color: #ccc;
+    color: $white;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+}
+
+// 🔁 Pagination
+.pagination-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  margin-right: 1rem;
+  text-decoration: none;
+  color: $primary;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: $primary;
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

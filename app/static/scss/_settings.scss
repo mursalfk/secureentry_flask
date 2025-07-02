@@ -1,0 +1,19 @@
+@use "sass:color";
+@use "variables" as *;
+
+form {
+  margin-bottom: 1.5rem;
+
+  button {
+    background-color: $accent;
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: color.scale($accent, $lightness: -10%);
+    }
+  }
+}

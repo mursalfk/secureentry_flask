@@ -1,0 +1,108 @@
+{% extends "admin/base_admin.html" %} {% block title %}Manage Users{% endblock
+%} {% block content %}
+<div class="admin-users">
+  <a href="{{ url_for('admin_dashboard') }}" class="back-link link-button"
+    >← Back to Dashboard</a
+  >
+
+  <h2><i class="fas fa-users"></i> All Users</h2>
+
+  <!-- Toolbar Section -->
+  <div class="user-actions">
+    <form
+      method="GET"
+      action="{{ url_for('admin_users') }}"
+      class="search-form"
+    >
+      <input
+        type="text"
+        name="search"
+        placeholder="Search by username or email..."
+        value="{{ request.args.get('search', '') }}"
+      />
+      <button type="submit">Search</button>
+    </form>
+
+    <div class="action-links">
+      <a href="{{ url_for('export_users') }}" class="link">📥 Export CSV</a>
+      <a href="{{ url_for('admin_add_user') }}" class="link">➕ Add User</a>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="user-table">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Admin?</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+            {% if user.is_admin %}
+            <span class="badge success">Yes</span>
+            {% else %}
+            <span class="badge">No</span>
+            {% endif %}
+          </td>
+          <td>
+            {{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at
+            else 'N/A' }}
+          </td>
+          <td class="actions">
+            <form
+              method="POST"
+              action="{{ url_for('admin_toggle_admin', user_id=user.id) }}"
+              style="display: inline-block"
+            >
+              <button
+                type="submit"
+                class="btn {{ 'success' if not user.is_admin else 'warning' }}"
+              >
+                {{ 'Make Admin' if not user.is_admin else 'Revoke Admin' }}
+              </button>
+            </form>
+
+            <form
+              method="POST"
+              action="{{ url_for('admin_delete_user', user_id=user.id) }}"
+              style="display: inline-block"
+              onsubmit="return confirm('Are you sure you want to delete this user?');"
+            >
+              <button type="submit" class="btn danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    {% if users.has_prev %}
+    <a
+      href="{{ url_for('admin_users', page=users.prev_num) }}"
+      class="pagination-link"
+      >← Previous</a
+    >
+    {% endif %} {% if users.has_next %}
+    <a
+      href="{{ url_for('admin_users', page=users.next_num) }}"
+      class="pagination-link"
+      >Next →</a
+    >
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
