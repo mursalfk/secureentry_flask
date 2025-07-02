@@ -1,5 +1,4 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
 *.py[cod]
 *$py.class
 
@@ -11,16 +10,12 @@ secureentry_venv/
 *.env
 
 # Flask cache
-instance/
 *.log
 
 # Pytest and coverage
 .cache/
 .coverage
 htmlcov/
-
-# Compiled Sass/CSS
-app/static/css/
 
 # VS Code / IDEs
 .vscode/
@@ -32,10 +27,7 @@ Thumbs.db
 
 # SQLite DB
 *.sqlite3
-*.db
 
-# Migrations (optional if you want to regenerate them)
-migrations/
 
 # Jupyter Notebooks (optional)
 .ipynb_checkpoints/
