@@ -3,16 +3,122 @@
 {% block title %}Voice Recognition{% endblock %}
 
 {% block content %}
-<title>Voice Recognition</title>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <ul class="flashes">
+      {% for category, message in messages %}
+        <li class="flash {{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
 <h2>🎤 Voice Recognition</h2>
 
-<form method="post">
-  <button type="submit">Start Voice Recognition</button>
-</form>
+<button id="startBtn" class="primary-button">Start Voice Recognition</button>
 
-{% if result %}
-  <p><strong>Result:</strong> {{ result }}</p>
-{% endif %}
+<!-- Modal -->
+<div id="popupModal" class="modal hidden">
+  <div class="modal-content">
+    <p id="popupMessage">🎙️ Listening...</p>
+    <button id="closeModal">Close</button>
+  </div>
+</div>
 
-<p><a href="{{ url_for('open_door') }}" class="link-button">🔙 Back</a></p>
+<a href="{{ url_for('open_door') }}" class="link-button">🔙 Back</a>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+
+document.getElementById("startBtn").addEventListener("click", async () => {
+  if (isRecording) return;
+  isRecording = true;
+  showPopup("🎙️ Listening...");
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+    mediaRecorder.onstop = async () => {
+      showPopup("⏳ Verifying...");
+
+      const blob = new Blob(audioChunks, { type: "audio/wav" });
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+
+      reader.onloadend = async () => {
+        const base64Audio = reader.result.split(',')[1];
+
+        const res = await fetch('/voice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ audio: base64Audio })
+        });
+
+        const data = await res.json();
+        showPopup(data.message || '✅ Done');
+
+        // Auto-close after 3 seconds
+        setTimeout(() => {
+          closePopup();
+          isRecording = false;
+        }, 3000);
+      };
+    };
+
+    mediaRecorder.start();
+    setTimeout(() => mediaRecorder.stop(), 3000);  // Stop after 3s
+
+  } catch (err) {
+    showPopup("❌ Error accessing microphone");
+    isRecording = false;
+  }
+});
+
+document.getElementById("closeModal").addEventListener("click", () => {
+  closePopup();
+  isRecording = false;
+});
+
+function showPopup(msg) {
+  document.getElementById("popupMessage").innerText = msg;
+  document.getElementById("popupModal").classList.remove("hidden");
+}
+
+function closePopup() {
+  document.getElementById("popupModal").classList.add("hidden");
+}
+</script>
+
+<style>
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(0,0,0,0.2);
+}
+
+.hidden {
+  display: none;
+}
+</style>
 {% endblock %}

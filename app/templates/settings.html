@@ -1,21 +1,123 @@
 {% extends "base.html" %}
 {% block title %}Settings{% endblock %}
+
 {% block content %}
 <h2>⚙️ Settings</h2>
 
+<!-- Face Retrain -->
 <form method="post" action="{{ url_for('retrain_face') }}">
   <button type="submit">🔁 Retrain Face Model</button>
 </form>
 
-<form method="post" action="{{ url_for('retrain_voice') }}">
-  <button type="submit">🔁 Retrain Voice Model</button>
-</form>
+<!-- Voice Retrain -->
+<button id="retrainVoiceBtn">🎤 Retrain Voice Model</button>
 
+<!-- Floating Modal -->
+<div id="voicePopup" class="modal" style="display: none; position: fixed; top: 15%; left: 50%; transform: translate(-50%, -15%); background: #f9f9f9; border-radius: 12px; padding: 20px 25px; z-index: 9999; box-shadow: 0 8px 20px rgba(0,0,0,0.2); max-width: 420px;">
+  <div class="modal-content">
+    <h3 style="margin-top: 0;">🎙️ Voice Model Retraining</h3>
+    <div id="spinner" style="display:none; text-align: center; margin: 10px 0;">
+      <div class="loader"></div>
+      <p style="margin: 5px 0;">Processing...</p>
+    </div>
+    <p><strong>Status:</strong></p>
+    <p id="statusMessage">Preparing to record...</p>
+    <p><strong>Time Remaining:</strong> <span id="countdown">10</span> seconds</p>
+    <button onclick="closePopup()">❌ Cancel</button>
+  </div>
+</div>
+
+<!-- Back Button -->
 <p><a href="{{ url_for('dashboard') }}" class="link-button">🔙 Back to Dashboard</a></p>
 
+<!-- Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% for category, message in messages %}
     <div class="flash-{{ category }}">{{ message }}</div>
   {% endfor %}
 {% endwith %}
+
+<!-- Loader CSS -->
+<style>
+.loader {
+  border: 6px solid #eee;
+  border-top: 6px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+
+<!-- JavaScript -->
+<script>
+function closePopup() {
+  document.getElementById("voicePopup").style.display = "none";
+}
+
+document.getElementById("retrainVoiceBtn").addEventListener("click", async function () {
+  const popup = document.getElementById("voicePopup");
+  const countdownEl = document.getElementById("countdown");
+  const statusEl = document.getElementById("statusMessage");
+  const spinner = document.getElementById("spinner");
+
+  popup.style.display = "block";
+  countdownEl.textContent = 10;
+  spinner.style.display = "none";
+  statusEl.textContent = "🎤 Recording started...";
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    const audioChunks = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) audioChunks.push(event.data);
+    };
+
+    mediaRecorder.start();
+
+    let seconds = 10;
+    const interval = setInterval(() => {
+      seconds--;
+      countdownEl.textContent = seconds;
+      if (seconds === 0) {
+        clearInterval(interval);
+        mediaRecorder.stop();
+      }
+    }, 1000);
+
+    mediaRecorder.onstop = async () => {
+      statusEl.textContent = "📦 Packaging your audio...";
+      spinner.style.display = "block";
+
+      const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const base64Audio = btoa(
+        new Uint8Array(arrayBuffer).reduce((s, b) => s + String.fromCharCode(b), "")
+      );
+
+      statusEl.textContent = "📤 Sending audio for retraining...";
+
+      const response = await fetch("/retrain-voice-model", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio: base64Audio }),
+      });
+
+      const result = await response.json();
+      spinner.style.display = "none";
+      statusEl.textContent = result.message || "✅ Retraining completed!";
+    };
+  } catch (err) {
+    console.error("🎤 Microphone access denied:", err);
+    statusEl.textContent = "❌ Microphone access denied or unsupported.";
+  }
+});
+</script>
 {% endblock %}

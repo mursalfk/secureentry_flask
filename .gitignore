@@ -35,3 +35,7 @@ Thumbs.db
 # __init__.pyc and other junk
 *.egg-info/
 *.bak
+
+*.wav
+
+*.npy

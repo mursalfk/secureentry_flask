@@ -1,11 +1,14 @@
-from flask import render_template, request, redirect, url_for, flash, abort, send_file
+from flask import render_template, request, redirect, url_for, flash, abort, send_file, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import app, db
 from app.models import User
-import csv
-from io import StringIO
 from functools import wraps
+from werkzeug.utils import secure_filename
+from io import StringIO
+import base64
+import os
+from app.voice_recognition_helper import predict_user
 
 # ---------------------------
 # Admin Check Decorator
@@ -95,12 +98,53 @@ def face_recognition():
         return render_template('face_recognition.html', result=result)
     return render_template('face_recognition.html')
 
+import wave
+import base64
+import numpy as np
+from flask import request, jsonify, render_template
+from flask_login import login_required, current_user
+from app.voice_recognition_helper import predict_user
+
 @app.route('/voice', methods=['GET', 'POST'])
 @login_required
 def voice_recognition():
     if request.method == 'POST':
-        result = "✅ Voice Verified"
-        return render_template('voice_recognition.html', result=result)
+        data = request.get_json()
+        audio_base64 = data.get('audio')
+
+        if not audio_base64:
+            return jsonify({'message': '❌ No audio received'}), 400
+
+        # Decode base64 to bytes
+        audio_bytes = base64.b64decode(audio_base64)
+        temp_path = f'temp_audio_{current_user.id}.wav'
+
+        try:
+            # Convert raw PCM bytes into a proper WAV file
+            with wave.open(temp_path, 'wb') as wf:
+                wf.setnchannels(1)         # Mono
+                wf.setsampwidth(2)         # 16-bit
+                wf.setframerate(16000)     # 16 kHz
+                wf.writeframes(audio_bytes)
+
+            # Run prediction
+            predicted_user = predict_user(temp_path)
+
+        except Exception as e:
+            print(f"🚨 Error during voice prediction: {e}")
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            return jsonify({'message': '❌ Voice recognition failed'}), 500
+
+        # Clean up
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+        if predicted_user == current_user.username:
+            return jsonify({'message': f'✅ Welcome Home, {current_user.username}'})
+        else:
+            return jsonify({'message': '❌ Voice not recognized'}), 200
+
     return render_template('voice_recognition.html')
 
 @app.route('/profile', methods=['GET', 'POST'])
@@ -139,25 +183,22 @@ def about():
 # ---------------------------
 @app.route('/admin')
 @login_required
+@admin_required
 def admin_dashboard():
-    if not current_user.is_admin:
-        abort(403)
     retrain_status = "✅ All models trained"
     return render_template("admin/admin_dashboard.html", retrain_status=retrain_status)
 
 @app.route('/admin/users')
 @login_required
+@admin_required
 def admin_users():
-    if not current_user.is_admin:
-        abort(403)
     users = User.query.all()
     return render_template('admin/users.html', users=users)
 
 @app.route('/admin/users/promote/<int:user_id>', methods=['POST'])
 @login_required
+@admin_required
 def promote_user(user_id):
-    if not current_user.is_admin:
-        abort(403)
     user = User.query.get_or_404(user_id)
     user.is_admin = True
     db.session.commit()
@@ -166,9 +207,8 @@ def promote_user(user_id):
 
 @app.route('/admin/users/delete/<int:user_id>', methods=['POST'])
 @login_required
+@admin_required
 def delete_user(user_id):
-    if not current_user.is_admin:
-        abort(403)
     user = User.query.get_or_404(user_id)
     if user.id == current_user.id:
         flash("❌ You cannot delete yourself!", "danger")
@@ -180,9 +220,8 @@ def delete_user(user_id):
 
 @app.route('/admin/users/export')
 @login_required
+@admin_required
 def export_users():
-    if not current_user.is_admin:
-        abort(403)
     output = StringIO()
     writer = csv.writer(output)
     writer.writerow(['ID', 'Username', 'Email', 'Is Admin'])
@@ -193,9 +232,8 @@ def export_users():
 
 @app.route('/admin/toggle-admin/<int:user_id>', methods=['POST'])
 @login_required
+@admin_required
 def admin_toggle_admin(user_id):
-    if not current_user.is_admin:
-        abort(403)
     user = User.query.get_or_404(user_id)
     if user.id == current_user.id:
         flash("❌ You cannot change your own admin status!", "danger")
@@ -208,9 +246,8 @@ def admin_toggle_admin(user_id):
 
 @app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
 @login_required
+@admin_required
 def admin_delete_user(user_id):
-    if not current_user.is_admin:
-        abort(403)
     user = User.query.get_or_404(user_id)
     if user.id == current_user.id:
         flash("❌ You cannot delete yourself!", "danger")
@@ -241,3 +278,48 @@ def admin_add_user():
             return redirect(url_for('admin_users'))
 
     return render_template('admin/add_user.html')
+
+@app.route('/retrain-voice-model', methods=['POST'])
+@login_required
+def retrain_voice_model():
+    import base64, os, wave
+    import datetime
+    from app.voice_retrain_helper import retrain_model
+    from app.voice_chunker import chunk_audio_file  # you'll create this
+
+    try:
+        # Step 1: Decode base64 audio
+        data = request.get_json()
+        audio_base64 = data.get('audio')
+        if not audio_base64:
+            return jsonify({"message": "❌ No audio data received."}), 400
+
+        user_folder = os.path.join("app/dataset/voice_data", current_user.username)
+        chunk_folder = os.path.join(user_folder, "chunks")
+        os.makedirs(chunk_folder, exist_ok=True)
+
+        # Step 2: Save audio sample
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        audio_path = os.path.join(user_folder, f"recording_{timestamp}.wav")
+
+        with wave.open(audio_path, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(16000)
+            audio_bytes = base64.b64decode(audio_base64)
+            wf.writeframes(audio_bytes)
+
+        # Step 3: Chunk the sample into 1-second .wav files
+        chunk_audio_file(audio_path, chunk_folder)
+
+        # Optional: remove original raw file
+        os.remove(audio_path)
+
+        # Step 4: Retrain the model
+        message = retrain_model()
+
+        return jsonify({"message": message or "✅ Retraining completed!"})
+
+    except Exception as e:
+        print(f"🚨 Error during retraining: {e}")
+        return jsonify({"message": "❌ Voice retraining failed."}), 500
