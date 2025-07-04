@@ -1,6 +1,6 @@
 import os
 
-DATASET_DIR = "app/voice_data"
+DATASET_DIR = "app/dataset/voice_data"
 
 print("🧑‍🤝‍🧑 Total speaker folders:", len(os.listdir(DATASET_DIR)))
 print()

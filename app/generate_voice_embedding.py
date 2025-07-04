@@ -4,7 +4,7 @@ import tensorflow as tf
 import librosa
 
 # === Paths ===
-DATASET_DIR = "app/voice_data"
+DATASET_DIR = "app/dataset/voice_data"
 MODEL_PATH = "app/models/voice-recognition-model.keras"
 EMBEDDINGS_DIR = "app/models/voice_embeddings"
 

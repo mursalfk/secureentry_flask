@@ -7,14 +7,22 @@ import shutil
 import numpy as np
 import pandas as pd
 
+
+# Visualization
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
 # Audio processing
 import librosa
 import soundfile as sf
+
 
 # Machine learning
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
+
 
 # Deep learning
 import tensorflow as tf
@@ -39,9 +47,8 @@ os.makedirs(output_dir, exist_ok=True)
 print(f"Contents of {output_dir} cleared.")
 
 
-# test_audio_path = os.path.join("app/dataset/voice_data", current_user.username)
-test_audio_path = os.path.join("app", "dataset", "voice_data", "Mursal_Furqan", "recording_20250704_215612.wav")
-bg_noise_path = os.path.join("app", "dataset", "_background_noise_", "running_tap.wav")
+test_audio_path = os.path.join("app/dataset/voice_data", current_user.username)
+bg_noise_path = "../_background_noise_/running_tap.wav"
 
 
 test_audio, sr = librosa.load(test_audio_path, sr=16000)
@@ -61,7 +68,7 @@ chunks = [mixed[i:i + chunk_samples] for i in range(0, len(mixed), chunk_samples
 print(f"Number of chunks before padding: {len(chunks)}")
 
 
-output_dir = os.path.join("app", "dataset", "noise", "Mursal_Furqan")
+output_dir = "/app/dataset/noise/Mursal Furqan"
 os.makedirs(output_dir, exist_ok=True)
 
 
@@ -76,11 +83,11 @@ for i, chunk in enumerate(chunks):
 
 
 # Path to the dataset
-dataset_path = os.path.join("app", "dataset", "voice_data")
+dataset_path = "/app/dataset/voice_data"
 
 
 # Output directory to save the combined files
-output_dir = os.path.join("app", "dataset", "noise")
+output_dir = "/app/dataset/noise"
 
 
 # Create the output directory if it doesn't exist
@@ -119,7 +126,7 @@ for speaker_folder in speaker_folders:
 
 # Convert data to MFCC
 # Set the parent directory for speaker folders
-parent_dir = os.path.join("app", "dataset", "noise")
+parent_dir = "/app/dataset/noise"
 
 
 # List of speaker folders
@@ -129,7 +136,7 @@ speaker_folders = [
    "Julia_Gillard",
    "Magaret_Tarcher",
    "Nelson_Mandela",
-   "Mursal_Furqan"
+   "Mursal Furqan"
 ]
 
 
@@ -211,127 +218,5 @@ else:
 
 
 # Saving the model
-model_output_path = os.path.join("app", "models", "voice-recognition-model.keras")
+model_output_path = os.path.join("models/voice_recognition_model.keras")
 model.save(model_output_path)
-
-
-
-# import os
-# import numpy as np
-# import librosa
-# import tensorflow as tf
-# from sklearn.model_selection import train_test_split
-# from tensorflow.keras.callbacks import EarlyStopping
-# import soundfile as sf
-
-# VOICE_DATA_DIR = os.path.join("app", "dataset", "voice_data")
-# MODEL_OUTPUT_PATH = os.path.join("app", "models", "voice-recognition-model.keras")
-
-# def extract_features(audio_path):
-#     y, sr = librosa.load(audio_path, sr=16000)
-#     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
-#     if mfcc.shape[1] < 32:
-#         pad_width = 32 - mfcc.shape[1]
-#         mfcc = np.pad(mfcc, ((0, 0), (0, pad_width)), mode='constant')
-#     else:
-#         mfcc = mfcc[:, :32]
-#     return mfcc.T  # Shape: (32, 13)
-
-# def retrain_model():
-#     print("🚀 Starting voice model retraining...")
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-#     X, y, label_to_user = [], [], {}
-#     users = sorted(os.listdir(VOICE_DATA_DIR))
-#     for idx, user in enumerate(users):
-#         chunk_dir = os.path.join(VOICE_DATA_DIR, user, "chunks")
-#         if not os.path.exists(chunk_dir): continue
-#         label_to_user[idx] = user
-
-#         for filename in os.listdir(chunk_dir):
-#             if filename.endswith(".wav"):
-#                 file_path = os.path.join(chunk_dir, filename)
-#                 try:
-#                     features = extract_features(file_path)
-#                     X.append(features)
-#                     y.append(idx)
-#                 except Exception as e:
-#                     print(f"❌ Skipping {file_path} due to error: {e}")
-
-#     # USer's AUdio HERE
-#     # test_audio_path = INPUT_DIR + "/test-data/WhatsApp Audio 2025-04-23 at 15.57.52.wav"
-
-#     # # USer's AUdio HERE
-#     # bg_noise_path = INPUT_DIR+ "/speaker-recognition-dataset/16000_pcm_speeches/_background_noise_/running_tap.wav"
-
-#     # test_audio, sr = librosa.load(test_audio_path, sr=16000)
-#     # noise, _ = librosa.load(bg_noise_path, sr=sr)
-#     # repeat_times = int(np.ceil(len(test_audio) / len(noise)))
-#     # extended_noise = np.tile(noise, repeat_times)[:len(test_audio)]
-#     # mixed = 0.8 * test_audio + 0.5 * extended_noise
-    
-#     X = np.array(X)
-#     y = np.array(y)
-
-#     print(f"✅ Dataset shape: X={X.shape}, y={y.shape}")
-#     if len(np.unique(y)) < 2:
-#         print("⚠️ Not enough users to train the model. Skipping retraining.")
-#         return
-
-#     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
-
-#     num_classes = len(np.unique(y))
-
-#     # Build a simple LSTM model
-#     inputs = tf.keras.Input(shape=(32, 13))
-#     x = tf.keras.layers.LSTM(128)(inputs)
-#     x = tf.keras.layers.Dense(64, activation='relu', name="embedding_layer")(x)
-#     outputs = tf.keras.layers.Dense(num_classes, activation='softmax')(x)
-#     model = tf.keras.Model(inputs, outputs)
-    
-#     # model = tf.keras.models.load_model(MODEL_OUTPUT_PATH)
-#     # model = tf.keras.load_model(MODEL_OUTPUT_PATH)
-#     # print("🔄 Loaded existing model for retraining.")
-
-#     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
-#     early_stop = EarlyStopping(monitor='val_loss', patience=2, restore_best_weights=True)
-#     history = model.fit(X_train, y_train,
-#                         validation_data=(X_val, y_val),
-#                         epochs=20,
-#                         batch_size=32,
-#                         callbacks=[early_stop],
-#                         verbose=1)
-
-#     model.save(MODEL_OUTPUT_PATH)
-#     print(f"✅ Retrained model saved at: {MODEL_OUTPUT_PATH}")

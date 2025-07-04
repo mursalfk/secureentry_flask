@@ -1,17 +1,12 @@
-{% extends "base.html" %}
-
-{% block title %}Voice Recognition{% endblock %}
-
-{% block content %}
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <ul class="flashes">
-      {% for category, message in messages %}
-        <li class="flash {{ category }}">{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
+{% extends "base.html" %} {% block title %}Voice Recognition{% endblock %} {%
+block content %} {% with messages = get_flashed_messages(with_categories=true)
+%} {% if messages %}
+<ul class="flashes">
+  {% for category, message in messages %}
+  <li class="flash {{ category }}">{{ message }}</li>
+  {% endfor %}
+</ul>
+{% endif %} {% endwith %}
 
 <h2>🎤 Voice Recognition</h2>
 
@@ -28,40 +23,44 @@
 <a href="{{ url_for('open_door') }}" class="link-button">🔙 Back</a>
 
 <script>
-let mediaRecorder;
-let audioChunks = [];
-let isRecording = false;
+  let mediaRecorder;
+  let audioChunks = [];
+  let isRecording = false;
 
-document.getElementById("startBtn").addEventListener("click", async () => {
-  if (isRecording) return;
-  isRecording = true;
-  showPopup("🎙️ Listening...");
+  document.getElementById("startBtn").addEventListener("click", async () => {
+    if (isRecording) return;
+    isRecording = true;
+    showPopup("🎙️ Listening...");
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
+    function blobToBase64(blob) {
+      return new Promise((resolve, _) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    }
 
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
 
-    mediaRecorder.onstop = async () => {
-      showPopup("⏳ Verifying...");
+      mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
 
-      const blob = new Blob(audioChunks, { type: "audio/wav" });
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
+      mediaRecorder.onstop = async () => {
+        showPopup("⏳ Verifying...");
 
-      reader.onloadend = async () => {
-        const base64Audio = reader.result.split(',')[1];
+        const blob = new Blob(audioChunks, { type: "audio/wav" });
+        const base64String = await blobToBase64(blob);
 
-        const res = await fetch('/voice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ audio: base64Audio })
+        const res = await fetch("/voice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ audio: base64String }),
         });
 
         const data = await res.json();
-        showPopup(data.message || '✅ Done');
+        showPopup(data.message || "✅ Done");
 
         // Auto-close after 3 seconds
         setTimeout(() => {
@@ -69,56 +68,54 @@ document.getElementById("startBtn").addEventListener("click", async () => {
           isRecording = false;
         }, 3000);
       };
-    };
 
-    mediaRecorder.start();
-    setTimeout(() => mediaRecorder.stop(), 3000);  // Stop after 3s
+      mediaRecorder.start();
+      setTimeout(() => mediaRecorder.stop(), 3000); // Stop after 3s
+    } catch (err) {
+      showPopup("❌ Error accessing microphone");
+      isRecording = false;
+    }
+  });
 
-  } catch (err) {
-    showPopup("❌ Error accessing microphone");
+  document.getElementById("closeModal").addEventListener("click", () => {
+    closePopup();
     isRecording = false;
+  });
+
+  function showPopup(msg) {
+    document.getElementById("popupMessage").innerText = msg;
+    document.getElementById("popupModal").classList.remove("hidden");
   }
-});
 
-document.getElementById("closeModal").addEventListener("click", () => {
-  closePopup();
-  isRecording = false;
-});
-
-function showPopup(msg) {
-  document.getElementById("popupMessage").innerText = msg;
-  document.getElementById("popupModal").classList.remove("hidden");
-}
-
-function closePopup() {
-  document.getElementById("popupModal").classList.add("hidden");
-}
+  function closePopup() {
+    document.getElementById("popupModal").classList.add("hidden");
+  }
 </script>
 
 <style>
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
 
-.modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 0 12px rgba(0,0,0,0.2);
-}
+  .modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+  }
 
-.hidden {
-  display: none;
-}
+  .hidden {
+    display: none;
+  }
 </style>
 {% endblock %}

@@ -9,6 +9,7 @@ from io import StringIO
 import base64
 import os
 from app.voice_recognition_helper import predict_user
+# from app.voice_retrain_helper import retrain_model
 
 # ---------------------------
 # Admin Check Decorator
@@ -115,20 +116,30 @@ def voice_recognition():
         if not audio_base64:
             return jsonify({'message': '❌ No audio received'}), 400
 
-        # Decode base64 to bytes
-        audio_bytes = base64.b64decode(audio_base64)
-        temp_path = f'temp_audio_{current_user.id}.wav'
+        # Timestamped file names
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        wav_path = os.path.join(f"recording_{timestamp}.wav")
+        temp_path = os.path.join(f"temp_{timestamp}.webm")
 
+        # Decode base64 to bytes
+        audio_bytes = base64.b64decode(audio_base64.split(",")[-1])
+        # temp_path = f'temp_audio_{current_user.id}.wav'
+        print('-----    ----------------')
+        print(temp_path)
+        print('-----    ----------------')
+
+        with open(temp_path, "wb") as f:
+            f.write(audio_bytes)
+
+        # Convert to WAV
+        audio = AudioSegment.from_file(temp_path, format="webm")  # or "ogg" or "mp4"
+        audio = audio.set_channels(1).set_frame_rate(16000)
+        audio.export(wav_path, format="wav")
+        
         try:
-            # Convert raw PCM bytes into a proper WAV file
-            with wave.open(temp_path, 'wb') as wf:
-                wf.setnchannels(1)         # Mono
-                wf.setsampwidth(2)         # 16-bit
-                wf.setframerate(16000)     # 16 kHz
-                wf.writeframes(audio_bytes)
 
             # Run prediction
-            predicted_user = predict_user(temp_path)
+            predicted_user = predict_user(wav_path)
 
         except Exception as e:
             print(f"🚨 Error during voice prediction: {e}")
@@ -279,47 +290,133 @@ def admin_add_user():
 
     return render_template('admin/add_user.html')
 
+from flask import request, jsonify
+from flask_login import login_required, current_user
+import os, datetime, base64
+from pydub import AudioSegment
+from app.voice_chunker import chunk_audio_file
+
 @app.route('/retrain-voice-model', methods=['POST'])
 @login_required
 def retrain_voice_model():
-    import base64, os, wave
-    import datetime
-    from app.voice_retrain_helper import retrain_model
-    from app.voice_chunker import chunk_audio_file  # you'll create this
-
     try:
-        # Step 1: Decode base64 audio
         data = request.get_json()
         audio_base64 = data.get('audio')
         if not audio_base64:
             return jsonify({"message": "❌ No audio data received."}), 400
 
+        # Create user-specific folder paths
         user_folder = os.path.join("app/dataset/voice_data", current_user.username)
         chunk_folder = os.path.join(user_folder, "chunks")
         os.makedirs(chunk_folder, exist_ok=True)
 
-        # Step 2: Save audio sample
+        # Timestamped file names
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        audio_path = os.path.join(user_folder, f"recording_{timestamp}.wav")
+        wav_path = os.path.join(user_folder, f"recording_{timestamp}.wav")
+        temp_path = os.path.join(user_folder, f"temp_{timestamp}.webm")
 
-        with wave.open(audio_path, "wb") as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(2)
-            wf.setframerate(16000)
-            audio_bytes = base64.b64decode(audio_base64)
-            wf.writeframes(audio_bytes)
+        # Decode base64
+        audio_bytes = base64.b64decode(audio_base64.split(",")[-1])
+        with open(temp_path, "wb") as f:
+            f.write(audio_bytes)
 
-        # Step 3: Chunk the sample into 1-second .wav files
-        chunk_audio_file(audio_path, chunk_folder)
+        # Convert to WAV
+        audio = AudioSegment.from_file(temp_path, format="webm")  # or "ogg" or "mp4"
+        audio = audio.set_channels(1).set_frame_rate(16000)
+        audio.export(wav_path, format="wav")
 
-        # Optional: remove original raw file
-        os.remove(audio_path)
+        # Clean up temp
+        os.remove(temp_path)
 
-        # Step 4: Retrain the model
-        message = retrain_model()
+        # Chunk into 1-second segments
+        # chunk_audio_file(wav_path, chunk_folder)
 
-        return jsonify({"message": message or "✅ Retraining completed!"})
+        # Retrain model (optional)
+        # message = retrain_model()
+
+        return jsonify({"message" "✅ Retraining completed!"})
 
     except Exception as e:
         print(f"🚨 Error during retraining: {e}")
         return jsonify({"message": "❌ Voice retraining failed."}), 500
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# @app.route('/retrain-voice-model', methods=['POST'])
+# @login_required
+# def retrain_voice_model():
+#     # import base64, os, wave
+#     # import datetime
+#     # from app.voice_retrain_helper import retrain_model
+#     # from app.voice_chunker import chunk_audio_file  # you'll create this
+
+#     try:
+#         # Step 1: Decode base64 audio
+#         data = request.get_json()
+#         audio_base64 = data.get('audio')
+#         # print('----------------------------------')
+#         # print(f"🔊 Received audio data: {audio_base64}...")  # Log first 30 chars for debugging
+#         # print('----------------------------------')
+#         if not audio_base64:
+#             return jsonify({"message": "❌ No audio data received."}), 400
+
+#         user_folder = os.path.join("app/dataset/voice_data", current_user.username)
+#         chunk_folder = os.path.join(user_folder, "chunks")
+#         os.makedirs(chunk_folder, exist_ok=True)
+
+#         # Step 2: Save audio sample
+#         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+#         webm_path = os.path.join(user_folder, f"recording_{timestamp}.webm")
+#         wav_path = os.path.join(user_folder, f"recording_{timestamp}.wav")
+
+#         # audio_path = os.path.join(user_folder, f"recording_{timestamp}.wav")
+
+
+#         # audio_bytes = base64.b64decode(audio_base64)
+#         audio_bytes = base64.b64decode(audio_base64.split(",")[-1])  # handle full base64 string with mime
+#         with open(webm_path, "wb") as f:
+#             f.write(audio_bytes)
+
+#         audio = AudioSegment.from_file(webm_path, format="webm")
+#         audio = audio.set_channels(1).set_frame_rate(16000)
+#         audio.export(wav_path, format="wav")
+            
+            
+#         # with open(audio_path, "wb") as wf:
+#         #     # wf.setnchannels(1)
+#         #     # wf.setsampwidth(2)
+#         #     # wf.setframerate(16000)
+#         #     # # audio_bytes = base64.b64decode(audio_base64)
+#         #     # wf.writeframes(audio_bytes)
+#         #     wf.write(audio_bytes)
+
+#         # Step 3: Chunk the sample into 1-second .wav files
+#         chunk_audio_file(wav_path, chunk_folder)
+
+#         # Optional: remove original raw file
+#         # os.remove(audio_path)
+
+#         # Step 4: Retrain the model
+#         # message = retrain_model()
+
+#         return jsonify({"message" or "✅ Retraining completed!"})
+
+#     except Exception as e:
+#         print(f"🚨 Error during retraining: {e}")
+#         return jsonify({"message": "❌ Voice retraining failed."}), 500

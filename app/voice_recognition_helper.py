@@ -1,33 +1,36 @@
 import tensorflow as tf
 import numpy as np
-import librosa
 import os
+import librosa
 from sklearn.metrics.pairwise import cosine_similarity
 import traceback
+from sklearn.preprocessing import StandardScaler
 
 # Paths
 MODEL_PATH = os.path.join("app", "models", "voice-recognition-model.keras")
 EMBEDDINGS_DIR = os.path.join("app", "models", "voice_embeddings")
 
-# Load full model
+# Load the saved model and warm it up
 base_model = tf.keras.models.load_model(MODEL_PATH)
+_ = base_model(np.zeros((1, 32, 13), dtype=np.float32))  # warmup call
 
-# 🔍 Get embedding model (up to 'embedding_layer')
+# Now extract the correct embedding layer
 embedding_model = tf.keras.Model(
     inputs=base_model.input,
     outputs=base_model.get_layer("embedding_layer").output
 )
 
-# 🔊 Feature extraction
-def extract_features(audio_path):
-    y, sr = librosa.load(audio_path, sr=16000)
+def extract_features(file_path):
+    y, sr = librosa.load(file_path, sr=16000, duration=1)
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+    mfcc = StandardScaler().fit_transform(mfcc)
     if mfcc.shape[1] < 32:
         pad_width = 32 - mfcc.shape[1]
         mfcc = np.pad(mfcc, ((0, 0), (0, pad_width)), mode='constant')
     else:
         mfcc = mfcc[:, :32]
-    return np.expand_dims(mfcc.T, axis=0)  # (1, 32, 13)
+    return mfcc.T  # (32, 13)
+
 
 # 🔐 Predict speaker using cosine similarity
 def predict_user(audio_path):
@@ -36,6 +39,7 @@ def predict_user(audio_path):
         print("📦 Features shape:", features.shape)
 
         # Get embedding
+        features = np.expand_dims(features, axis=0)
         voice_embedding = embedding_model.predict(features, verbose=0)[0]
         print("🧠 Voice embedding shape:", voice_embedding.shape)
 
