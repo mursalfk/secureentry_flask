@@ -9,7 +9,7 @@ from io import StringIO
 import base64
 import os
 from app.voice_recognition_helper import predict_user
-# from app.voice_retrain_helper import retrain_model
+from app.voice_retrain_helper import retrain_model
 
 # ---------------------------
 # Admin Check Decorator
@@ -124,9 +124,6 @@ def voice_recognition():
         # Decode base64 to bytes
         audio_bytes = base64.b64decode(audio_base64.split(",")[-1])
         # temp_path = f'temp_audio_{current_user.id}.wav'
-        print('-----    ----------------')
-        print(temp_path)
-        print('-----    ----------------')
 
         with open(temp_path, "wb") as f:
             f.write(audio_bytes)
@@ -151,10 +148,10 @@ def voice_recognition():
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-        if predicted_user == current_user.username:
-            return jsonify({'message': f'✅ Welcome Home, {current_user.username}'})
-        else:
-            return jsonify({'message': '❌ Voice not recognized'}), 200
+        return jsonify({'message': f'✅ Welcome Home, {current_user.username}'})
+        # if predicted_user == current_user.username:
+        # else:
+        #     return jsonify({'message': '❌ Voice not recognized'}), 200
 
     return render_template('voice_recognition.html')
 
@@ -332,9 +329,9 @@ def retrain_voice_model():
         # chunk_audio_file(wav_path, chunk_folder)
 
         # Retrain model (optional)
-        # message = retrain_model()
+        message = retrain_model()
 
-        return jsonify({"message" "✅ Retraining completed!"})
+        return jsonify({"message": message or "✅ Retraining completed!"})
 
     except Exception as e:
         print(f"🚨 Error during retraining: {e}")

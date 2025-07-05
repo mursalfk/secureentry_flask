@@ -91,7 +91,7 @@ category, message in messages %}
     const spinner = document.getElementById("spinner");
 
     popup.style.display = "block";
-    countdownEl.textContent = 10;
+    countdownEl.textContent = 30;
     spinner.style.display = "none";
     statusEl.textContent = "🎤 Recording started...";
 
@@ -113,7 +113,7 @@ category, message in messages %}
 
       mediaRecorder.start();
 
-      let seconds = 10;
+      let seconds = 30;
       const interval = setInterval(() => {
         seconds--;
         countdownEl.textContent = seconds;
