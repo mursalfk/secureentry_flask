@@ -3,16 +3,81 @@
 {% block title %}Facial Recognition{% endblock %}
 
 {% block content %}
-<title>Facial Recognition</title>
 <h2>🧑‍🦱 Facial Recognition</h2>
 
-<form method="post">
-  <button type="submit">Start Face Recognition</button>
-</form>
+<!-- Button to open modal -->
+<button id="startBtn">Start Face Recognition</button>
 
-{% if result %}
-  <p><strong>Result:</strong> {{ result }}</p>
-{% endif %}
+<!-- Modal -->
+<div id="faceModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <video id="video" width="320" height="240" autoplay></video>
+    <br />
+    <button id="captureBtn">📸 Capture</button>
+    <button id="closeBtn">❌ Close</button>
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+  </div>
+</div>
 
 <p><a href="{{ url_for('open_door') }}" class="link-button">🔙 Back</a></p>
+
+<!-- Style for modal -->
+<style>
+  .modal {
+    position: fixed;
+    z-index: 999;
+    left: 0; top: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.7);
+  }
+  .modal-content {
+    background: white;
+    margin: 10% auto;
+    padding: 20px;
+    width: fit-content;
+    text-align: center;
+  }
+</style>
+
+<!-- JavaScript -->
+<script>
+  const startBtn = document.getElementById("startBtn");
+  const faceModal = document.getElementById("faceModal");
+  const closeBtn = document.getElementById("closeBtn");
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const captureBtn = document.getElementById("captureBtn");
+
+  startBtn.onclick = () => {
+    faceModal.style.display = "block";
+    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+      video.srcObject = stream;
+    });
+  };
+
+  closeBtn.onclick = () => {
+    faceModal.style.display = "none";
+    video.srcObject.getTracks().forEach(track => track.stop());
+  };
+
+  captureBtn.onclick = () => {
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = canvas.toDataURL("image/jpeg");
+
+    fetch("/facial-recognition", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: imageData }),
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message || "✅ Verified!");
+      faceModal.style.display = "none";
+      video.srcObject.getTracks().forEach(track => track.stop());
+    })
+    .catch(err => {
+      alert("❌ Error verifying face.");
+      console.error(err);
+    });
+  };
+</script>
 {% endblock %}

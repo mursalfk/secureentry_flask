@@ -34,8 +34,20 @@ def retrain_model():
    os.makedirs(output_dir, exist_ok=True)
 
    print(f"Contents of {output_dir} cleared.")
+   username = current_user.username.replace(" ", "_")
+   
+   path_temp_dir = os.path.join("app", "dataset", "voice_data", f"{username}", "temp")
+   
+   # Get the list of files in the temp directory
+   temp_files = os.listdir(path_temp_dir)
+   
+   # get the latest file based on the timestamp in the filename
+   latest_file = max(temp_files, key=lambda x: os.path.getctime(os.path.join(path_temp_dir, x)))
+   latest_file_path = os.path.join(path_temp_dir, latest_file)
+   print(f"Latest file in temp directory: {latest_file_path}")
 
-   test_audio_path = os.path.join("app", "dataset", "voice_data", "Mursal_Furqan", "recording_20250704_215612.wav")
+   test_audio_path = latest_file_path
+
    bg_noise_path = os.path.join("app", "dataset", "_background_noise_", "running_tap.wav")
 
    test_audio, sr = librosa.load(test_audio_path, sr=16000)

@@ -118,7 +118,13 @@ def voice_recognition():
 
         # Timestamped file names
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        wav_path = os.path.join(f"recording_{timestamp}.wav")
+        print('----------------------------------')
+        # Replace all spaces with underscores
+        username = current_user.username.replace(" ", "_")
+        print(username)
+        wav_path = os.path.join("app", "dataset", "voice_data", f"{username}", "temp", f"recording_{timestamp}.wav")
+        print('----------------------------------')
+
         temp_path = os.path.join(f"temp_{timestamp}.webm")
 
         # Decode base64 to bytes
@@ -336,6 +342,41 @@ def retrain_voice_model():
     except Exception as e:
         print(f"🚨 Error during retraining: {e}")
         return jsonify({"message": "❌ Voice retraining failed."}), 500
+
+from app.facial_recognition_helper import build_face_database, find_match_in_database
+from PIL import Image
+from io import BytesIO
+from datetime import datetime
+
+@app.route("/facial-recognition", methods=["POST"])
+@login_required
+def facial_recognition():
+    try:
+        data = request.get_json()
+        image_data = data.get("image")
+
+        if not image_data:
+            return jsonify({"message": "❌ No image data received."}), 400
+
+        # Extract base64 part
+        header, encoded = image_data.split(",", 1)
+        img_bytes = base64.b64decode(encoded)
+
+        # Save image
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")        
+        save_dir = os.path.join("app", "dataset", "faces", "temp_image")
+        os.makedirs(save_dir, exist_ok=True)
+
+        image_path = os.path.join(save_dir, f"{current_user.username}_{timestamp}.jpg")
+        img = Image.open(BytesIO(img_bytes))
+        img.save(image_path)
+
+        return jsonify({"message": f"✅ Image saved as {image_path}"})
+
+    except Exception as e:
+        print(f"🚨 Facial recognition error: {e}")
+        return jsonify({"message": "❌ Failed to process image."}), 500
+
 
 
 
