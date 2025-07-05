@@ -154,10 +154,10 @@ def voice_recognition():
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-        return jsonify({'message': f'✅ Welcome Home, {current_user.username}'})
-        # if predicted_user == current_user.username:
-        # else:
-        #     return jsonify({'message': '❌ Voice not recognized'}), 200
+        if predicted_user == current_user.username:
+            return jsonify({'message': f'✅ Welcome Home, {current_user.username}'})
+        else:
+            return jsonify({'message': '❌ Voice not recognized'}), 200
 
     return render_template('voice_recognition.html')
 
@@ -176,11 +176,34 @@ def profile():
 def settings():
     return render_template('settings.html')
 
-@app.route('/retrain-face', methods=['POST'])
+@app.route('/retrain-face-model', methods=['POST'])
 @login_required
-def retrain_face():
-    flash("🧑\u200d🧠 Face model retraining started!", "success")
-    return redirect(url_for('settings'))
+def retrain_face_model():
+    try:
+        data = request.get_json()
+        img_data = data.get("image")
+
+        if not img_data:
+            return jsonify({"message": "❌ No image data received"}), 400
+
+        # Create directory if it doesn't exist
+        user_folder = os.path.join("app", "dataset", "faces")
+        os.makedirs(user_folder, exist_ok=True)
+
+        # Save the captured image as username.jpg
+        username = current_user.username.replace(" ", "_")  # Replace spaces with underscores
+        save_path = os.path.join(user_folder, f"{username}.jpg")
+        img_bytes = base64.b64decode(img_data.split(",")[-1])
+
+        with open(save_path, "wb") as f:
+            f.write(img_bytes)
+
+        return jsonify({"message": "✅ Face image saved successfully!"})
+
+    except Exception as e:
+        print(f"🚨 Error during face retraining: {e}")
+        return jsonify({"message": "❌ Face retraining failed."}), 500
+
 
 @app.route('/retrain-voice', methods=['POST'])
 @login_required
@@ -348,40 +371,64 @@ from PIL import Image
 from io import BytesIO
 from datetime import datetime
 
-@app.route("/facial-recognition", methods=["POST"])
+from app.facial.face_utils import load_face_database, find_match_in_database
+import datetime, os, base64
+
+@app.route('/facial-recognition', methods=['POST'])
 @login_required
 def facial_recognition():
     try:
         data = request.get_json()
-        image_data = data.get("image")
+        img_data = data.get("image")
 
-        if not image_data:
-            return jsonify({"message": "❌ No image data received."}), 400
+        if not img_data:
+            return jsonify({"message": "No image data received"}), 400
 
-        # Extract base64 part
-        header, encoded = image_data.split(",", 1)
-        img_bytes = base64.b64decode(encoded)
+        # Decode base64 and save temp image
+        user_folder = os.path.join("app/dataset/faces/temp_image")
+        os.makedirs(user_folder, exist_ok=True)
 
-        # Save image
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")        
-        save_dir = os.path.join("app", "dataset", "faces", "temp_image")
-        os.makedirs(save_dir, exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{current_user.username}_{timestamp}.jpg"
+        img_path = os.path.join(user_folder, filename)
 
-        image_path = os.path.join(save_dir, f"{current_user.username}_{timestamp}.jpg")
-        img = Image.open(BytesIO(img_bytes))
-        img.save(image_path)
+        img_bytes = base64.b64decode(img_data.split(",")[-1])
+        with open(img_path, "wb") as f:
+            f.write(img_bytes)
 
-        return jsonify({"message": f"✅ Image saved as {image_path}"})
-
+        # Load DB and predict
+        db = load_face_database()
+        name, dist = find_match_in_database(img_path, db)
+        
+        name = name.replace("_", " ")  # Replace underscores with spaces
+        
+        if current_user.username != name:
+            return jsonify({"message": "❌ Face not recognized"}), 200
+        elif "No face" in name or "Error" in name:
+            return jsonify({"message": "❌ No face detected"}), 200
+        elif "No match" in name or "Error" in name:
+            print(f"🚨 Face recognition failed: {name}")
+            return jsonify({"message": "❌ Face not recognized"}), 200
+        else:
+            return jsonify({"message": f"✅ Welcome Home, {name}!"}), 200
+        
     except Exception as e:
         print(f"🚨 Facial recognition error: {e}")
-        return jsonify({"message": "❌ Failed to process image."}), 500
+        return jsonify({"message": "❌ Internal error"}), 500
 
-
-
-
-
-
+@app.route('/train-face-model', methods=['POST'])
+@login_required
+def train_face_model():
+    try:
+        from app.facial_recognition_helper import build_face_database
+        from keras_facenet import FaceNet
+        embedder = FaceNet()
+        faces_path = os.path.join("app", "dataset", "faces")
+        build_face_database(faces_path, embedder)
+        return jsonify({"message": "✅ Face model retrained successfully!"})
+    except Exception as e:
+        print(f"🚨 Error retraining face model: {e}")
+        return jsonify({"message": "❌ Failed to retrain face model."}), 500
 
 
 

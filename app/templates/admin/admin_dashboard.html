@@ -43,7 +43,7 @@
         <p>Retrain or monitor current models.</p>
         <p><strong>Status:</strong> {{ retrain_status }}</p>
         <div class="model-buttons">
-          <form method="POST" action="{{ url_for('retrain_face') }}">
+          <form method="POST" action="{{ url_for('retrain_face_model') }}">
             <button type="submit" class="admin-button success">Retrain Face</button>
           </form>
           <form method="POST" action="{{ url_for('retrain_voice') }}">

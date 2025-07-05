@@ -54,13 +54,14 @@ def retrain_model():
    noise, _ = librosa.load(bg_noise_path, sr=sr)
    repeat_times = int(np.ceil(len(test_audio) / len(noise)))
    extended_noise = np.tile(noise, repeat_times)[:len(test_audio)]
-   mixed = 0.8 * test_audio + 0.5 * extended_noise
+   mixed = 2*test_audio + 0*extended_noise  # Adjusted mixing ratio for better clarity
 
 
    chunk_duration = 1  # seconds
    chunk_samples = sr * chunk_duration
 
-
+   #print the audio length
+   print(f"Audio length: {len(mixed) / sr:.2f} seconds")
    chunks = [mixed[i:i + chunk_samples] for i in range(0, len(mixed), chunk_samples)]
 
 
@@ -93,34 +94,34 @@ def retrain_model():
    os.makedirs(output_dir, exist_ok=True)
 
 
-   # # List of speaker folders
-   # speaker_folders = [
-   #    "Benjamin_Netanyau",
-   #    "Jens_Stoltenberg",
-   #    "Julia_Gillard",
-   #    "Magaret_Tarcher",
-   #    "Nelson_Mandela"
-   # ]
+   # List of speaker folders
+   speaker_folders = [
+      "Benjamin_Netanyau",
+      "Jens_Stoltenberg",
+      "Julia_Gillard",
+      "Magaret_Tarcher",
+      "Nelson_Mandela"
+   ]
 
 
-   # for speaker_folder in speaker_folders:
-   #    speaker_folder_path = speaker_folder_path = os.path.join(dataset_path, speaker_folder)
-   #    wav_files = [f for f in os.listdir(speaker_folder_path)]
-   #    for wav_file in wav_files:
-   #       wav_file_path = os.path.join(speaker_folder_path, wav_file)
-   #       audio, sr = librosa.load(wav_file_path, sr=None)
-   #       noise, _ = librosa.load(bg_noise_path, sr=sr)
-   #       repeat_times = int(np.ceil(len(audio) / len(noise)))
-   #       extended_noise = np.tile(noise, repeat_times)[:len(audio)]
+   for speaker_folder in speaker_folders:
+      speaker_folder_path = speaker_folder_path = os.path.join(dataset_path, speaker_folder)
+      wav_files = [f for f in os.listdir(speaker_folder_path)]
+      for wav_file in wav_files:
+         wav_file_path = os.path.join(speaker_folder_path, wav_file)
+         audio, sr = librosa.load(wav_file_path, sr=None)
+         noise, _ = librosa.load(bg_noise_path, sr=sr)
+         repeat_times = int(np.ceil(len(audio) / len(noise)))
+         extended_noise = np.tile(noise, repeat_times)[:len(audio)]
          
-   #       mixed = 0.8 * audio + 0.5 * extended_noise
+         mixed = 0.5 * audio + 0.5 * extended_noise
 
 
-   #       os.makedirs(os.path.join(output_dir,f"{speaker_folder}"), exist_ok=True)
+         os.makedirs(os.path.join(output_dir,f"{speaker_folder}"), exist_ok=True)
 
 
-   #       output_file_path = os.path.join(output_dir, f"{speaker_folder}", wav_file.split(".")[0]+".wav")
-   #       sf.write(output_file_path, mixed, sr)
+         output_file_path = os.path.join(output_dir, f"{speaker_folder}", wav_file.split(".")[0]+".wav")
+         sf.write(output_file_path, mixed, sr)
 
 
    # Convert data to MFCC
@@ -207,93 +208,4 @@ def retrain_model():
    # Saving the model
    model_output_path = os.path.join("app", "models", "voice-recognition-model.keras")
    model.save(model_output_path)
-
-
-
-# import os
-# import numpy as np
-# import librosa
-# import tensorflow as tf
-# from sklearn.model_selection import train_test_split
-# from tensorflow.keras.callbacks import EarlyStopping
-# import soundfile as sf
-
-# VOICE_DATA_DIR = os.path.join("app", "dataset", "voice_data")
-# MODEL_OUTPUT_PATH = os.path.join("app", "models", "voice-recognition-model.keras")
-
-# def extract_features(audio_path):
-#     y, sr = librosa.load(audio_path, sr=16000)
-#     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
-#     if mfcc.shape[1] < 32:
-#         pad_width = 32 - mfcc.shape[1]
-#         mfcc = np.pad(mfcc, ((0, 0), (0, pad_width)), mode='constant')
-#     else:
-#         mfcc = mfcc[:, :32]
-#     return mfcc.T  # Shape: (32, 13)
-
-# def retrain_model():
-#     print("🚀 Starting voice model retraining...")
-#     X, y, label_to_user = [], [], {}
-#     users = sorted(os.listdir(VOICE_DATA_DIR))
-#     for idx, user in enumerate(users):
-#         chunk_dir = os.path.join(VOICE_DATA_DIR, user, "chunks")
-#         if not os.path.exists(chunk_dir): continue
-#         label_to_user[idx] = user
-
-#         for filename in os.listdir(chunk_dir):
-#             if filename.endswith(".wav"):
-#                 file_path = os.path.join(chunk_dir, filename)
-#                 try:
-#                     features = extract_features(file_path)
-#                     X.append(features)
-#                     y.append(idx)
-#                 except Exception as e:
-#                     print(f"❌ Skipping {file_path} due to error: {e}")
-
-#     # USer's AUdio HERE
-#     # test_audio_path = INPUT_DIR + "/test-data/WhatsApp Audio 2025-04-23 at 15.57.52.wav"
-
-#     # # USer's AUdio HERE
-#     # bg_noise_path = INPUT_DIR+ "/speaker-recognition-dataset/16000_pcm_speeches/_background_noise_/running_tap.wav"
-
-#     # test_audio, sr = librosa.load(test_audio_path, sr=16000)
-#     # noise, _ = librosa.load(bg_noise_path, sr=sr)
-#     # repeat_times = int(np.ceil(len(test_audio) / len(noise)))
-#     # extended_noise = np.tile(noise, repeat_times)[:len(test_audio)]
-#     # mixed = 0.8 * test_audio + 0.5 * extended_noise
-    
-#     X = np.array(X)
-#     y = np.array(y)
-
-#     print(f"✅ Dataset shape: X={X.shape}, y={y.shape}")
-#     if len(np.unique(y)) < 2:
-#         print("⚠️ Not enough users to train the model. Skipping retraining.")
-#         return
-
-#     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
-
-#     num_classes = len(np.unique(y))
-
-#     # Build a simple LSTM model
-#     inputs = tf.keras.Input(shape=(32, 13))
-#     x = tf.keras.layers.LSTM(128)(inputs)
-#     x = tf.keras.layers.Dense(64, activation='relu', name="embedding_layer")(x)
-#     outputs = tf.keras.layers.Dense(num_classes, activation='softmax')(x)
-#     model = tf.keras.Model(inputs, outputs)
-    
-#     # model = tf.keras.models.load_model(MODEL_OUTPUT_PATH)
-#     # model = tf.keras.load_model(MODEL_OUTPUT_PATH)
-#     # print("🔄 Loaded existing model for retraining.")
-
-#     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
-#     early_stop = EarlyStopping(monitor='val_loss', patience=2, restore_best_weights=True)
-#     history = model.fit(X_train, y_train,
-#                         validation_data=(X_val, y_val),
-#                         epochs=20,
-#                         batch_size=32,
-#                         callbacks=[early_stop],
-#                         verbose=1)
-
-#     model.save(MODEL_OUTPUT_PATH)
-#     print(f"✅ Retrained model saved at: {MODEL_OUTPUT_PATH}")
+   print(f"Model saved to {model_output_path}")

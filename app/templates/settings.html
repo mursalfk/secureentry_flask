@@ -1,33 +1,29 @@
-{% extends "base.html" %} {% block title %}Settings{% endblock %} {% block
-content %}
+{% extends "base.html" %} {% block title %}Settings{% endblock %} {% block content %}
 <h2>⚙️ Settings</h2>
 
-<!-- Face Retrain -->
-<form method="post" action="{{ url_for('retrain_face') }}">
-  <button type="submit">🔁 Retrain Face Model</button>
-</form>
+<!-- Face Retrain Button -->
+<button onclick="openFaceModal()">🧑‍🦱 Retrain Face Model</button>
 
-<!-- Voice Retrain -->
+<!-- Face Modal -->
+<div id="faceRetrainModal" class="modal" style="display: none">
+  <div class="modal-content">
+    <video id="faceVideo" width="320" height="240" autoplay></video>
+    <br />
+    <button id="captureFaceBtn">📸 Capture</button>
+    <div id="faceStatus" style="margin-top: 10px"></div>
+    <button id="trainFaceModelBtn" style="display: none; margin-top: 10px">
+      🔁 Retrain Model
+    </button>
+    <button onclick="closeFaceModal()">❌ Cancel</button>
+    <canvas id="faceCanvas" width="320" height="240" style="display: none"></canvas>
+  </div>
+</div>
+
+<!-- Voice Retrain Button -->
 <button id="retrainVoiceBtn">🎤 Retrain Voice Model</button>
 
-<!-- Floating Modal -->
-<div
-  id="voicePopup"
-  class="modal"
-  style="
-    display: none;
-    position: fixed;
-    top: 15%;
-    left: 50%;
-    transform: translate(-50%, -15%);
-    background: #f9f9f9;
-    border-radius: 12px;
-    padding: 20px 25px;
-    z-index: 9999;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    max-width: 420px;
-  "
->
+<!-- Voice Modal -->
+<div id="voicePopup" class="modal" style="display: none; position: fixed; top: 15%; left: 50%; transform: translate(-50%, -15%); background: #f9f9f9; border-radius: 12px; padding: 20px 25px; z-index: 9999; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); max-width: 420px">
   <div class="modal-content">
     <h3 style="margin-top: 0">🎙️ Voice Model Retraining</h3>
     <div id="spinner" style="display: none; text-align: center; margin: 10px 0">
@@ -36,23 +32,16 @@ content %}
     </div>
     <p><strong>Status:</strong></p>
     <p id="statusMessage">Preparing to record...</p>
-    <p>
-      <strong>Time Remaining:</strong> <span id="countdown">10</span> seconds
-    </p>
+    <p><strong>Time Remaining:</strong> <span id="countdown">10</span> seconds</p>
     <button onclick="closePopup()">❌ Cancel</button>
   </div>
 </div>
 
 <!-- Back Button -->
-<p>
-  <a href="{{ url_for('dashboard') }}" class="link-button"
-    >🔙 Back to Dashboard</a
-  >
-</p>
+<p><a href="{{ url_for('dashboard') }}" class="link-button">🔙 Back to Dashboard</a></p>
 
 <!-- Flash Messages -->
-{% with messages = get_flashed_messages(with_categories=true) %} {% for
-category, message in messages %}
+{% with messages = get_flashed_messages(with_categories=true) %} {% for category, message in messages %}
 <div class="flash-{{ category }}">{{ message }}</div>
 {% endfor %} {% endwith %}
 
@@ -68,85 +57,153 @@ category, message in messages %}
     margin: 0 auto;
   }
   @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .modal {
+    position: fixed;
+    z-index: 999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+  .modal-content {
+    background: white;
+    margin: 10% auto;
+    padding: 20px;
+    width: fit-content;
+    text-align: center;
   }
 </style>
 
 <!-- JavaScript -->
 <script>
-  function closePopup() {
-    document.getElementById("voicePopup").style.display = "none";
+function closePopup() {
+  document.getElementById("voicePopup").style.display = "none";
+}
+
+document.getElementById("retrainVoiceBtn").addEventListener("click", async function () {
+  const popup = document.getElementById("voicePopup");
+  const countdownEl = document.getElementById("countdown");
+  const statusEl = document.getElementById("statusMessage");
+  const spinner = document.getElementById("spinner");
+
+  popup.style.display = "block";
+  countdownEl.textContent = 30;
+  spinner.style.display = "none";
+  statusEl.textContent = "🎤 Recording started...";
+
+  function blobToBase64(blob) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
   }
 
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    const audioChunks = [];
 
-  document.getElementById("retrainVoiceBtn").addEventListener("click", async function () {
-    const popup = document.getElementById("voicePopup");
-    const countdownEl = document.getElementById("countdown");
-    const statusEl = document.getElementById("statusMessage");
-    const spinner = document.getElementById("spinner");
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) audioChunks.push(event.data);
+    };
 
-    popup.style.display = "block";
-    countdownEl.textContent = 30;
-    spinner.style.display = "none";
-    statusEl.textContent = "🎤 Recording started...";
+    mediaRecorder.start();
 
-    function blobToBase64(blob) {
-      return new Promise((resolve, _) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-      })};
+    let seconds = 30;
+    const interval = setInterval(() => {
+      seconds--;
+      countdownEl.textContent = seconds;
+      if (seconds === 0) {
+        clearInterval(interval);
+        mediaRecorder.stop();
+      }
+    }, 1000);
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      const audioChunks = [];
+    mediaRecorder.onstop = async () => {
+      statusEl.textContent = "📦 Packaging your audio...";
+      spinner.style.display = "block";
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunks.push(event.data);
-      };
+      const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+      const base64String = await blobToBase64(audioBlob);
 
-      mediaRecorder.start();
+      statusEl.textContent = "📤 Sending audio for retraining...";
 
-      let seconds = 30;
-      const interval = setInterval(() => {
-        seconds--;
-        countdownEl.textContent = seconds;
-        if (seconds === 0) {
-          clearInterval(interval);
-          mediaRecorder.stop();
-        }
-      }, 1000);
+      const response = await fetch("/retrain-voice-model", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio: base64String }),
+      });
 
-      mediaRecorder.onstop = async () => {
-        statusEl.textContent = "📦 Packaging your audio...";
-        spinner.style.display = "block";
+      const result = await response.json();
+      spinner.style.display = "none";
+      statusEl.textContent = result.message || "✅ Retraining completed!";
+    };
+  } catch (err) {
+    console.error("🎤 Microphone access denied:", err);
+    statusEl.textContent = "❌ Microphone access denied or unsupported.";
+  }
+});
 
-        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+const faceModal = document.getElementById("faceRetrainModal");
+const faceVideo = document.getElementById("faceVideo");
+const faceCanvas = document.getElementById("faceCanvas");
+const faceStatus = document.getElementById("faceStatus");
+const captureFaceBtn = document.getElementById("captureFaceBtn");
+const trainFaceModelBtn = document.getElementById("trainFaceModelBtn");
 
-        const base64String = await blobToBase64(audioBlob);
-
-        statusEl.textContent = "📤 Sending audio for retraining...";
-
-        const response = await fetch("/retrain-voice-model", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ audio: base64String }),
-        });
-
-        const result = await response.json();
-        spinner.style.display = "none";
-        statusEl.textContent = result.message || "✅ Retraining completed!";
-      };
-    } catch (err) {
-      console.error("🎤 Microphone access denied:", err);
-      statusEl.textContent = "❌ Microphone access denied or unsupported.";
-    }
+function openFaceModal() {
+  faceModal.style.display = "block";
+  navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+    faceVideo.srcObject = stream;
   });
+}
+
+function closeFaceModal() {
+  faceModal.style.display = "none";
+  if (faceVideo.srcObject) {
+    faceVideo.srcObject.getTracks().forEach((track) => track.stop());
+    faceVideo.srcObject = null;
+  }
+}
+
+captureFaceBtn.onclick = async () => {
+  faceStatus.innerText = "📷 Capturing...";
+  const ctx = faceCanvas.getContext("2d");
+  ctx.drawImage(faceVideo, 0, 0, faceCanvas.width, faceCanvas.height);
+
+  const imageData = faceCanvas.toDataURL("image/jpeg");
+
+  try {
+    const res = await fetch("/retrain-face-model", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: imageData }),
+    });
+
+    const result = await res.json();
+    faceStatus.innerText = result.message || "✅ Face saved!";
+    trainFaceModelBtn.style.display = "inline-block";
+  } catch (err) {
+    console.error("Face capture error:", err);
+    faceStatus.innerText = "❌ Failed to save face.";
+  }
+};
+
+trainFaceModelBtn.onclick = async () => {
+  faceStatus.innerText = "🧠 Retraining...";
+  try {
+    const res = await fetch("/train-face-model", { method: "POST" });
+    const result = await res.json();
+    faceStatus.innerText = result.message || "✅ Model retrained!";
+  } catch (err) {
+    console.error("Retraining error:", err);
+    faceStatus.innerText = "❌ Failed to retrain model.";
+  }
+};
 </script>
 {% endblock %}
